@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailscale 控制台</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ============================================================
+     登录页
+     ============================================================ -->
+<div class="login-view" id="loginView" hidden>
+  <div class="login-card">
+    <div class="ts-logo">
+      <svg class="ts-mark" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor">
+        <circle cx="5" cy="5" r="2.5"/><circle cx="12" cy="5" r="2.5"/><circle cx="19" cy="5" r="2.5"/>
+        <circle cx="5" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/>
+        <circle cx="5" cy="19" r="2.5"/><circle cx="12" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/>
+      </g></svg>
+      <span class="ts-word">tailscale</span>
+    </div>
+
+    <div class="login-notice" id="loginNotice" hidden></div>
+
+    <form class="login-form" id="loginForm" autocomplete="off">
+      <input class="login-input" id="loginEmail" type="email"
+             placeholder="Enter your email..." autocomplete="username" spellcheck="false">
+      <button class="login-btn login-btn-dark" type="submit" id="loginSubmit">Sign in</button>
+    </form>
+
+    <div class="login-or"><span>OR</span></div>
+
+    <div class="login-socials">
+      <button class="login-btn login-btn-light" data-provider="google">
+        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg><span>Sign in with Google</span>
+      </button>
+
+      <button class="login-btn login-btn-light" data-provider="microsoft">
+        <svg viewBox="0 0 23 23" width="17" height="17" aria-hidden="true">
+          <path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/>
+          <path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/>
+        </svg><span>Sign in with Microsoft</span>
+      </button>
+
+      <button class="login-btn login-btn-light" data-provider="github">
+        <svg viewBox="0 0 16 16" width="18" height="18" fill="#1b1f24" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg><span>Sign in with GitHub</span>
+      </button>
+
+      <button class="login-btn login-btn-light" data-provider="apple">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#111" aria-hidden="true">
+          <path d="M17.05 12.54c-.02-2.38 1.94-3.52 2.03-3.58-1.11-1.62-2.83-1.84-3.44-1.87-1.46-.15-2.86.86-3.6.86-.74 0-1.88-.84-3.09-.82-1.59.03-3.06.93-3.88 2.35-1.65 2.87-.42 7.11 1.19 9.44.79 1.14 1.73 2.42 2.96 2.37 1.19-.05 1.64-.77 3.08-.77 1.44 0 1.84.77 3.1.75 1.28-.02 2.09-1.17 2.87-2.31.91-1.33 1.28-2.62 1.3-2.69-.03-.01-2.5-.96-2.52-3.74zM14.7 5.32c.66-.8 1.1-1.9.98-3-.95.04-2.09.63-2.77 1.43-.61.7-1.14 1.83-1 2.92 1.06.08 2.13-.54 2.79-1.35z"/>
+        </svg><span>Sign in with Apple</span>
+      </button>
+
+      <button class="login-btn login-btn-light" data-provider="passkey">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="#111" aria-hidden="true">
+          <path d="M9.5 11a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5zm0 1.8c-3.4 0-6.5 1.74-6.5 3.9V20h13v-3.3c0-2.16-3.1-3.9-6.5-3.9z"/>
+          <path d="M17.6 10.2a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4zm0 2.1a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2zm-.85 4.1h1.7V22h-1.7v-1.2h-.85v1.2h-1.7v-3.4z"/>
+        </svg><span>Sign in with a passkey</span>
+      </button>
+    </div>
+
+    <p class="login-foot">First time? Learn more at
+      <a href="#" data-open="login">tailscale.com</a>.</p>
+
+    <div class="login-version">
+      <div class="lv-row">
+        <span>Tailscale 控制台</span><b id="loginAppVer">v—</b>
+      </div>
+      <div class="lv-row">
+        <span>本机 Tailscale 客户端</span><b id="loginCliVer">—</b>
+      </div>
+      <a class="lv-download" href="#" id="loginDownload">
+        <span class="lv-label">下载最新版：</span>
+        <span class="lv-url">https://tailscale.com/download</span>
+        <span class="lv-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     主界面
+     ============================================================ -->
+<div class="app-root" id="appRoot" hidden>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20"><g fill="currentColor">
+        <circle cx="5" cy="5" r="2.4"/><circle cx="12" cy="5" r="2.4"/><circle cx="19" cy="5" r="2.4"/>
+        <circle cx="5" cy="12" r="2.4"/><circle cx="12" cy="12" r="2.4"/><circle cx="19" cy="12" r="2.4"/>
+        <circle cx="5" cy="19" r="2.4"/><circle cx="12" cy="19" r="2.4"/><circle cx="19" cy="19" r="2.4"/>
+      </g></svg>
+    </div>
+    <div class="brand-text">
+      <strong>Tailscale 控制台</strong>
+      <span id="appVersion">v—</span>
+    </div>
+  </div>
+
+  <div class="self-chip" id="selfChip">
+    <span class="dot dot-idle" id="selfDot"></span>
+    <span id="selfName">读取中…</span>
+    <code id="selfIP">—</code>
+  </div>
+
+  <div class="topbar-actions">
+    <button class="btn" id="btnRefresh" title="重新读取状态">刷新</button>
+    <button class="btn btn-icon" id="btnTheme" title="切换深浅色">🌗</button>
+    <button class="btn btn-primary" id="btnConnect" disabled>连接</button>
+
+    <div class="account-chip" id="accountChip" title="当前登录账号">
+      <img class="account-avatar" id="accountPic" alt="">
+      <div class="account-text">
+        <strong id="accountName">—</strong>
+        <span id="accountLogin">—</span>
+      </div>
+    </div>
+
+    <button class="btn btn-danger-ghost" id="btnLogout">注销</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab is-active" data-tab="devices">设备</button>
+  <button class="tab" data-tab="settings">本机设置</button>
+  <button class="tab" data-tab="netcheck">网络诊断</button>
+  <button class="tab" data-tab="cloud">云端管理</button>
+  <button class="tab" data-tab="logs">运行日志</button>
+</nav>
+
+<main class="content">
+
+  <!-- ================= 设备 ================= -->
+  <section class="panel is-active" data-panel="devices">
+    <div class="stats" id="stats">
+      <div class="stat"><span class="stat-num" id="stTotal">0</span><span class="stat-label">设备总数</span></div>
+      <div class="stat"><span class="stat-num ok" id="stOnline">0</span><span class="stat-label">在线</span></div>
+      <div class="stat"><span class="stat-num muted" id="stOffline">0</span><span class="stat-label">离线</span></div>
+      <div class="stat"><span class="stat-num" id="stExit">0</span><span class="stat-label">出口节点</span></div>
+      <div class="stat"><span class="stat-num" id="stDirect">0</span><span class="stat-label">直连</span></div>
+    </div>
+
+    <div class="toolbar">
+      <input class="input search" id="searchInput" type="search" placeholder="搜索主机名 / IP / 域名 / 系统…">
+      <div class="seg" id="filterSeg">
+        <button class="seg-item is-active" data-filter="all">全部</button>
+        <button class="seg-item" data-filter="online">在线</button>
+        <button class="seg-item" data-filter="offline">离线</button>
+        <button class="seg-item" data-filter="exit">出口节点</button>
+      </div>
+      <select class="input select" id="sortSelect">
+        <option value="status">排序：在线优先</option>
+        <option value="name">排序：名称</option>
+        <option value="lastseen">排序：最近在线</option>
+        <option value="os">排序：系统</option>
+      </select>
+      <label class="switch-label"><input type="checkbox" id="autoRefresh" checked> 每 15 秒自动刷新</label>
+    </div>
+
+    <div class="device-grid" id="deviceGrid"></div>
+    <div class="empty" id="deviceEmpty" hidden>没有符合条件的设备</div>
+  </section>
+
+  <!-- ================= 本机设置 ================= -->
+  <section class="panel" data-panel="settings">
+    <div class="card-grid-2">
+      <div class="card">
+        <h3>连接状态</h3>
+        <dl class="kv" id="selfKv"></dl>
+        <div class="row-actions">
+          <button class="btn btn-primary" id="btnUp">拉起连接</button>
+          <button class="btn btn-danger-ghost" id="btnDown">断开连接</button>
+        </div>
+        <p class="hint">断开只是本机退出网络，不会把设备从 tailnet 里删掉。重新连接用「拉起连接」即可。</p>
+      </div>
+
+      <div class="card">
+        <h3>出口节点（用别人的网络上网）</h3>
+        <p class="hint">选一台设备作为出口节点，本机所有上网流量都从它出去。</p>
+        <select class="input select wide" id="exitSelect">
+          <option value="">不使用出口节点（直连上网）</option>
+        </select>
+        <div class="row-actions">
+          <button class="btn btn-primary" id="btnExitApply">应用</button>
+          <label class="switch-label"><input type="checkbox" id="exitLanAccess"> 同时允许访问本地局域网</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>常用开关</h3>
+        <div class="switch-row">
+          <div><strong>接受子网路由</strong><span class="hint">使用别的设备广播过来的网段</span></div>
+          <input type="checkbox" class="tgl" data-flag="accept-routes" data-kind="bool">
+        </div>
+        <div class="switch-row">
+          <div><strong>接受 DNS 配置</strong><span class="hint">使用管理后台下发的 DNS</span></div>
+          <input type="checkbox" class="tgl" data-flag="accept-dns" data-kind="bool">
+        </div>
+        <div class="switch-row">
+          <div><strong>ShieldsUp（屏蔽入站）</strong><span class="hint">拒绝所有入站连接，只出不进</span></div>
+          <input type="checkbox" class="tgl" data-flag="shields-up" data-kind="bool">
+        </div>
+        <div class="switch-row">
+          <div><strong>Tailscale SSH</strong><span class="hint">让本机可以被 tailnet 内免密 SSH</span></div>
+          <input type="checkbox" class="tgl" data-flag="ssh" data-kind="bool">
+        </div>
+        <div class="switch-row">
+          <div><strong>作为出口节点对外提供</strong><span class="hint">把本机网络共享给其他设备（还需在后台勾选批准）</span></div>
+          <input type="checkbox" class="tgl" data-flag="advertise-exit-node" data-kind="bool">
+        </div>
+        <div class="switch-row">
+          <div><strong>自动检查更新</strong><span class="hint">有新版本时提示</span></div>
+          <input type="checkbox" class="tgl" data-flag="update-check" data-kind="bool">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>软件版本与更新</h3>
+        <dl class="kv">
+          <dt>控制台版本</dt><dd id="verApp">—</dd>
+          <dt>Tailscale 客户端</dt><dd id="verClient">—</dd>
+          <dt>客户端路径</dt><dd id="verExe">—</dd>
+          <dt>唯一设备编号</dt><dd id="verNodeId">—</dd>
+        </dl>
+        <div class="row-actions">
+          <a class="btn btn-primary" href="#" id="btnDownload">
+            下载最新版 <span class="btn-url">tailscale.com/download</span> ↗
+          </a>
+          <button class="btn" id="btnOpenAdmin">打开管理后台</button>
+          <button class="btn" id="btnOpenDownload2">版本说明</button>
+        </div>
+        <p class="hint">
+          下载地址：<a href="#" id="linkDownload2">https://tailscale.com/download</a>　
+          （在系统默认浏览器里打开）
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 网络诊断 ================= -->
+  <section class="panel" data-panel="netcheck">
+    <div class="card">
+      <div class="row-between">
+        <div>
+          <h3>网络环境体检</h3>
+          <p class="hint">检查能否 UDP 打洞、NAT 类型、以及到各地中继服务器的延迟。约需 3~10 秒。</p>
+        </div>
+        <button class="btn btn-primary" id="btnNetcheck">开始检测</button>
+      </div>
+      <div class="netcheck-summary" id="netcheckSummary" hidden></div>
+      <div class="derp-list" id="derpList"></div>
+      <details class="raw" id="netcheckRawWrap" hidden>
+        <summary>原始输出</summary>
+        <pre id="netcheckRaw"></pre>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= 云端管理 ================= -->
+  <section class="panel" data-panel="cloud">
+    <div class="card">
+      <h3>接入管理后台 API（可选）</h3>
+      <p class="hint">
+        不填也能用——上面「设备」页的数据全部来自本机 Tailscale 客户端，不需要任何密钥。
+        只有要做「远程删除设备 / 给设备改名 / 让设备密钥过期」这类管理动作时，才需要填 API Key。
+      </p>
+      <div class="form-row">
+        <input class="input grow" id="apiKeyInput" type="password" placeholder="tskey-api-…（在后台 Settings → Keys 生成）">
+        <input class="input" id="tailnetInput" placeholder="tailnet，留空表示默认" style="max-width:220px">
+        <button class="btn btn-primary" id="btnSaveKey">保存</button>
+        <button class="btn" id="btnLoadDevices">拉取设备</button>
+      </div>
+      <p class="hint" id="keyStatus">未配置 API Key</p>
+      <p class="hint">生成入口：<a href="#" id="linkKeys">管理后台 → Settings → Keys → Generate access token</a>（权限保持默认即可）</p>
+    </div>
+
+    <div class="card">
+      <div class="row-between">
+        <h3>管理后台设备清单</h3>
+        <span class="hint" id="cloudCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="cloudTable">
+          <thead>
+            <tr><th>主机名</th><th>系统</th><th>IP</th><th>状态</th><th>最后在线</th><th>密钥到期</th><th>操作</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="empty" id="cloudEmpty">还没有拉取数据。填好 API Key 后点「拉取设备」。</div>
+    </div>
+  </section>
+
+  <!-- ================= 日志 ================= -->
+  <section class="panel" data-panel="logs">
+    <div class="card">
+      <div class="row-between">
+        <h3>运行日志</h3>
+        <button class="btn" id="btnClearLog">清空</button>
+      </div>
+      <pre class="log" id="logBox"></pre>
+    </div>
+  </section>
+
+</main>
+
+<footer class="statusbar">
+  <span class="sb-item"><span class="sb-key">软件版本</span><b id="footAppVer">v—</b></span>
+  <span class="sb-sep">|</span>
+  <span class="sb-item"><span class="sb-key">Tailscale 客户端</span><b id="footCliVer">—</b></span>
+  <span class="sb-sep">|</span>
+  <span class="sb-item"><span class="sb-key">账号</span><b id="footAccount">—</b></span>
+  <span class="sb-spacer"></span>
+  <a class="sb-link" href="#" id="footDownload" title="在浏览器中打开 https://tailscale.com/download">
+    <span class="sb-key">下载最新版</span>
+    <span class="sb-url">https://tailscale.com/download</span>
+    <span class="sb-arrow">↗</span>
+  </a>
+</footer>
+
+</div><!-- /app-root -->
+
+<!-- 设备详情 -->
+<div class="modal-backdrop" id="modal" hidden>
+  <div class="modal">
+    <header class="modal-head">
+      <strong id="modalTitle">设备详情</strong>
+      <button class="btn btn-icon" id="modalClose">✕</button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 注销 -->
+<div class="modal-backdrop" id="logoutModal" hidden>
+  <div class="modal modal-sm">
+    <header class="modal-head">
+      <strong>注销登录</strong>
+      <button class="btn btn-icon" id="logoutClose">✕</button>
+    </header>
+    <div class="modal-body">
+      <p class="hint" style="margin-top:0">当前登录账号：<b id="logoutWho">—</b></p>
+
+      <button class="logout-option" data-mode="lock">
+        <strong>仅注销本控制台</strong>
+        <span>清除本地登录状态并回到登录页。Tailscale 连接、设备都保持原样，随时可以再登进来。</span>
+      </button>
+
+      <button class="logout-option is-danger" data-mode="tailscale">
+        <strong>同时从 Tailscale 登出</strong>
+        <span>本机会立刻离线，节点密钥作废，必须重新走一次认证才能回到 tailnet。非必要别选这个。</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+  window.TS_TOKEN = "__TS_TOKEN__";
+  window.APP_VERSION = "__APP_VERSION__";
+</script>
+<script src="/static/app.js"></script>
+</body>
+</html>

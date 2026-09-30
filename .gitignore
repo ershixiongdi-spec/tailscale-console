@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# PyInstaller 构建产物
+build/
+dist/
+*.spec
+
+# 临时截图
+_shots/_icon-check.png
+
+# 本地运行产生的配置（在 %USERPROFILE%\.tailscale-console，不在项目内，仅保险起见）
+config.json
+error.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
