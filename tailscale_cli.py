@@ -23,22 +23,50 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import shutil
 import subprocess
 
-# Windows 下隐藏子进程控制台窗口，避免闪黑框
+IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
+
+# Windows 下隐藏子进程控制台窗口，避免闪黑框（macOS/Linux 没有这个参数）
 CREATE_NO_WINDOW = 0x08000000
 
-_CANDIDATES = (
+# tailscale 命令行工具的常见安装位置（按平台分别探测）
+_CANDIDATES_WIN = (
     r"C:\Program Files\Tailscale\tailscale.exe",
     r"C:\Program Files (x86)\Tailscale\tailscale.exe",
+)
+_CANDIDATES_MAC = (
+    "/usr/local/bin/tailscale",
+    "/opt/homebrew/bin/tailscale",
+    "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+    "/opt/local/bin/tailscale",
+)
+_CANDIDATES_UNIX = (
+    "/usr/bin/tailscale",
+    "/usr/sbin/tailscale",
+    "/usr/local/bin/tailscale",
+    "/usr/local/sbin/tailscale",
 )
 
 
 def find_exe() -> str | None:
-    """定位 tailscale.exe。"""
-    for path in _CANDIDATES:
-        if os.path.isfile(path):
+    """定位 tailscale 命令行工具（跨平台）。
+
+    macOS 说明：App Store 版 Tailscale 不带 CLI。若这里返回 None，
+    请先 `brew install tailscale`，或用官方 Standalone 版里的
+    「Install Tailscale CLI」菜单项安装命令行工具。
+    """
+    if IS_WINDOWS:
+        paths = _CANDIDATES_WIN
+    elif IS_MACOS:
+        paths = _CANDIDATES_MAC
+    else:
+        paths = _CANDIDATES_UNIX
+    for path in paths:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
             return path
     return shutil.which("tailscale")
 
@@ -50,18 +78,23 @@ def run(args: list[str], timeout: int = 30) -> dict:
     """执行一条 tailscale 命令，返回结构化结果。永不抛异常。"""
     label = "tailscale " + " ".join(args)
     if not TS_EXE:
+        hint = ("未找到 tailscale 命令行工具。"
+                + ("macOS 请先执行 brew install tailscale" if IS_MACOS else "")
+                + "（客户端下载：https://tailscale.com/download）")
         return {
             "ok": False, "code": -1, "cmd": label, "out": "",
-            "err": "未找到 tailscale.exe，请先安装 Tailscale 客户端（https://tailscale.com/download）",
+            "err": hint,
         }
     try:
+        # creationflags 只有 Windows 认，其他平台传了会报错
+        extra = {"creationflags": CREATE_NO_WINDOW} if IS_WINDOWS else {}
         proc = subprocess.run(
             [TS_EXE, *args],
             capture_output=True,
             timeout=timeout,
-            creationflags=CREATE_NO_WINDOW,
             encoding="utf-8",
             errors="replace",
+            **extra,
         )
         return {
             "ok": proc.returncode == 0,

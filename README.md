@@ -1,17 +1,69 @@
-# Tailscale 控制台（Windows 桌面版）
+# Tailscale 控制台（Windows / macOS 桌面版）
 
 把 `console.tailscale.com/admin/machines` 那套网页后台，换成一个**本机双击就开的窗口程序**。
 
-当前版本：**v1.1.0**　｜　适配 Tailscale 客户端 **1.102.3**
+当前版本：**v1.2.0**　｜　适配 Tailscale 客户端 **1.102.3**　｜　支持 **Windows** 与 **macOS**（Apple Silicon / Intel 均可）
 
 - 仓库：<https://github.com/ershixiongdi-spec/tailscale-console>
-- 免安装版（17 MB，无需 Python）：
+- Windows 免安装版（17 MB，无需 Python）：
   <https://github.com/ershixiongdi-spec/tailscale-console/releases/download/v1.1.0/TailscaleConsole.exe>
 - 许可：MIT
 
 ---
 
-## 一、怎么启动
+## 零、macOS 用户读这段（构建 .app）
+
+**先说一个硬限制**：`.app` **不能在 Windows 或 Linux 上打出来**。
+PyInstaller 不支持交叉编译，macOS 的应用程序包只能在 macOS 上构建。
+所以仓库里只有源码 + 构建脚本，没有现成的 Mac 版可下载——需要你在 Mac 上跑一条命令自己构建（约 2～3 分钟）。
+
+### 步骤
+
+```bash
+# 1) 拿到源码
+git clone https://github.com/ershixiongdi-spec/tailscale-console.git
+cd tailscale-console
+
+# 2) 一键构建（自动建虚拟环境、装依赖、生成图标、打包）
+./build_mac.sh
+
+# 想直接装进「应用程序」文件夹，就加 --install
+./build_mac.sh --install
+```
+
+产物在 `dist/TailscaleConsole.app`，双击即可运行。脚本最后会做 **ad-hoc 签名**并清掉隔离属性，尽量避开 Gatekeeper 拦截。
+
+### 前置条件
+
+| 项目 | 要求 | 说明 |
+|---|---|---|
+| Python | 3.9+（自带或 Homebrew 装的都行） | 脚本会自建 `.venv`，不污染系统环境 |
+| Tailscale 命令行 | `brew install tailscale` | **App Store 版 Tailscale 不带 CLI**，程序会提示"未找到" |
+| 网络 | 能访问 PyPI | 首次要下 pywebview / PyInstaller（约 100 MB） |
+
+程序会依次在 `/usr/local/bin`、`/opt/homebrew/bin`、`/Applications/Tailscale.app/Contents/MacOS/` 里找命令行工具，找不到会明确提示。
+
+### 如果被系统拦住
+
+第一次打开可能提示"来自身份不明的开发者"：
+
+- 最省事：**右键点击 .app → 打开**，弹窗里选"打开"
+- 或去：系统设置 → 隐私与安全性 → 下方"仍要打开"
+- 或在本机构建后执行：`xattr -cr dist/TailscaleConsole.app`（`build_mac.sh` 已经帮你做了）
+
+### Windows 与 Mac 的差异
+
+| 方面 | Windows | macOS |
+|---|---|---|
+| 窗口内核 | Edge WebView2 | 系统 WKWebView（Cocoa） |
+| 配置文件位置 | `%USERPROFILE%\.tailscale-console\` | `~/.tailscale-console/` |
+| 崩溃日志 | 同上目录 `error.log` | 同左 |
+| 桌面快捷方式 | `_make_shortcut.py` 建 `.lnk` | 把 `.app` 拷进 `/Applications` 即可 |
+| 打包命令 | `python _build.py` | `python _build.py`（同一条，脚本自动识别平台） |
+
+---
+
+## 一、怎么启动（Windows）
 
 **方式 A（推荐）**：双击桌面上的 **「Tailscale 控制台」** 快捷方式。
 
@@ -120,11 +172,17 @@ tailscale-console/
 │  └─ app.ico
 ├─ dist/
 │  └─ TailscaleConsole.exe   打包好的独立程序
-├─ _build_exe.py          重新打包 exe 用
+├─ _build.py              跨平台打包（Windows→exe，macOS→.app）
+├─ build_mac.sh           macOS 一键构建（建 venv + 装依赖 + 打包 + 签名）
+├─ _make_icon.py          生成 app.ico / app.icns / app.png
 └─ _verify_ui.py          渲染自检：逐页截图 + 抓前端报错
 ```
 
-配置和缓存目录：`%USERPROFILE%\.tailscale-console\`
+配置和缓存目录：
+
+- Windows：`%USERPROFILE%\.tailscale-console\`
+- macOS / Linux：`~/.tailscale-console/`
+
 （删掉这个文件夹 = 清空登录状态、API Key 和偏好，不影响 Tailscale 本身）
 
 ---
@@ -137,6 +195,9 @@ tailscale-console/
 | Edge WebView2 运行时 | Win10/11 一般自带 | ✅ 147.0.3912.912 |
 | Python（仅源码方式需要） | 3.11+，装了 pywebview | ✅ 托管环境已配好 |
 | exe 方式 | 无额外要求 | ✅ |
+
+macOS 侧对应要求：Python 3.9+、Tailscale 命令行（`brew install tailscale`，App Store 版不带）、
+系统自带 WKWebView 渲染（无需额外运行时）。详见「零、macOS 用户读这段」。
 
 ---
 
@@ -168,7 +229,8 @@ tailscale-console/
 
 | 版本 | 内容 |
 |---|---|
-| **v1.1.0** | 新增登录页（对齐官网样式）、账号显示与注销按钮、底部状态栏（版本号 + 下载链接）、软件版本卡片；接口加登录门禁 |
+| **v1.2.0** | 支持 macOS：跨平台找 Tailscale 命令行、浏览器退回路径跨平台、图标产出 `.icns`、新增 `build_mac.sh` 一键构建 `.app`；`_build_exe.py` 统一为跨平台 `_build.py` |
+| v1.1.0 | 新增登录页（对齐官网样式）、账号显示与注销按钮、底部状态栏（版本号 + 下载链接）、软件版本卡片；接口加登录门禁 |
 | v1.0.0 | 首版：设备总览、本机设置、网络诊断、云端管理、运行日志 |
 
 ### 开发时踩到的坑（备查）

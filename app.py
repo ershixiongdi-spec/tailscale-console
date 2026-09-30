@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import os
+import platform
 import secrets
 import socket
 import subprocess
@@ -34,7 +35,10 @@ from urllib.parse import urlparse
 import tailscale_cli as ts
 
 APP_NAME = "Tailscale 控制台"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
+
+IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
 
 DOWNLOAD_URL = "https://tailscale.com/download"
 LOGIN_START_URL = "https://login.tailscale.com/start"
@@ -51,7 +55,10 @@ WEB_DIR = BASE_DIR / "web"
 PREFERRED_PORT = 8756
 TOKEN = secrets.token_urlsafe(24)
 
-CONFIG_DIR = Path(os.environ.get("USERPROFILE") or Path.home()) / ".tailscale-console"
+# 配置目录：Windows 看 USERPROFILE，macOS/Linux 看 HOME，都没有才回落到 Path.home()
+CONFIG_DIR = Path(
+    os.environ.get("USERPROFILE") or os.environ.get("HOME") or str(Path.home())
+) / ".tailscale-console"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 ERROR_LOG = CONFIG_DIR / "error.log"
 
@@ -666,14 +673,26 @@ def start_server(port: int) -> ThreadingHTTPServer:
 
 
 def open_in_app_window(url: str) -> bool:
-    """退回方案：用 Chrome / Edge 的应用模式开一个无地址栏窗口。"""
-    candidates = [
-        Path(os.environ.get("LOCALAPPDATA", "")) / "Google/Chrome/Application/chrome.exe",
-        Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
-        Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
-        Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
-        Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
-    ]
+    """退回方案：用 Chrome / Edge 的应用模式开一个无地址栏窗口（跨平台）。"""
+    if IS_MACOS:
+        candidates = [
+            Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
+            Path("/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
+            Path("/Applications/Chromium.app/Contents/MacOS/Chromium"),
+        ]
+    elif IS_WINDOWS:
+        candidates = [
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Google/Chrome/Application/chrome.exe",
+            Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
+            Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
+            Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
+            Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"),
+        ]
+    else:
+        candidates = [Path(p) for p in (
+            "/usr/bin/google-chrome", "/usr/bin/chromium",
+            "/usr/bin/chromium-browser", "/usr/bin/microsoft-edge",
+        )]
     profile = CONFIG_DIR / "browser-profile"
     profile.mkdir(parents=True, exist_ok=True)
     for exe in candidates:
@@ -724,7 +743,9 @@ def main() -> int:
             import webview
 
             options = {}
-            icon_file = WEB_DIR / "app.ico"
+            # Windows 认 .ico；macOS 认 .icns（都没有就不传，窗口照样能开）
+            icon_name = "app.icns" if IS_MACOS else "app.ico"
+            icon_file = WEB_DIR / icon_name
             if icon_file.is_file():
                 options["icon"] = str(icon_file)
             try:
