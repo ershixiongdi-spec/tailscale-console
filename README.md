@@ -6,7 +6,7 @@
 
 - 仓库：<https://github.com/ershixiongdi-spec/tailscale-console>
 - Windows 免安装版（17 MB，无需 Python）：
-  <https://github.com/ershixiongdi-spec/tailscale-console/releases/download/v1.1.0/TailscaleConsole.exe>
+  <https://github.com/ershixiongdi-spec/tailscale-console/releases/download/v1.2.0/TailscaleConsole.exe>
 - 许可：MIT
 
 ---
