@@ -4,6 +4,11 @@
 
 当前版本：**v1.1.0**　｜　适配 Tailscale 客户端 **1.102.3**
 
+- 仓库：<https://github.com/ershixiongdi-spec/tailscale-console>
+- 免安装版（17 MB，无需 Python）：
+  <https://github.com/ershixiongdi-spec/tailscale-console/releases/download/v1.1.0/TailscaleConsole.exe>
+- 许可：MIT
+
 ---
 
 ## 一、怎么启动
