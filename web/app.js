@@ -237,6 +237,12 @@ function showLogin(authState, message) {
   if (message) {
     html = `<strong>${esc(message.title)}</strong>${esc(message.body || '')}`;
     kind = message.kind || 'bad';
+  } else if (ts.backend_state === 'Stopped') {
+    // 守护进程停了，优先提示启动客户端（不管账号是否登录）
+    html = `<strong>Tailscale 客户端未运行</strong>守护进程已停止（BackendState=Stopped），设备列表和登录都需要客户端先跑起来。`
+      + `<div class="notice-action"><button class="btn btn-sm btn-primary" id="ntStartClient">启动 Tailscale 客户端</button></div>`
+      + `<div class="notice-action"><button class="btn btn-sm" id="ntRetry">我已手动启动，刷新状态</button></div>`;
+    kind = 'warn';
   } else if (ts.logged_in && accounts.length) {
     const a = accounts[0];
     html = `<strong>本机 Tailscale 已登录</strong>账号 ${esc(a.login)}`
@@ -258,6 +264,10 @@ function showLogin(authState, message) {
   if (cont) cont.onclick = () => doLogin({ method: 'current' });
   const authBtn = $('#ntAuth');
   if (authBtn) authBtn.onclick = () => startBrowserAuth();
+  const sc = $('#ntStartClient');
+  if (sc) sc.onclick = () => startClient();
+  const rt = $('#ntRetry');
+  if (rt) rt.onclick = () => { refreshAuthState().then((st) => { if (st) showLogin(st); }); };
 
   if (ts.logged_in && accounts.length) {
     const a = accounts[0];
@@ -343,6 +353,49 @@ async function startBrowserAuth() {
   } catch (err) {
     loginNotice(`<strong>打开认证页失败</strong>${esc(err.message)}`, 'bad');
   }
+}
+
+async function startClient() {
+  const btn = $('#ntStartClient');
+  if (btn) { btn.disabled = true; btn.textContent = '启动中...'; }
+  try {
+    const res = await api('/api/start-client', {});
+    if (res && res.ok) {
+      loginNotice(`<strong>正在启动 Tailscale 客户端</strong>${esc(res.msg || '')} 等待守护进程就绪...`, 'warn');
+      startClientPoll();
+    } else {
+      loginNotice(`<strong>启动失败</strong>${esc((res && res.err) || '未知原因')}`, 'bad');
+      if (btn) { btn.disabled = false; btn.textContent = '启动 Tailscale 客户端'; }
+    }
+  } catch (e) {
+    loginNotice(`<strong>启动失败</strong>${esc(e.message)}`, 'bad');
+    if (btn) { btn.disabled = false; btn.textContent = '启动 Tailscale 客户端'; }
+  }
+}
+
+function startClientPoll() {
+  stopAuthPoll();
+  let ticks = 0;
+  STATE.authPollTimer = setInterval(async () => {
+    ticks += 1;
+    if (ticks > 60) {  // 最多轮询 2 分钟
+      stopAuthPoll();
+      loginNotice(`<strong>等待超时</strong>守护进程未在 2 分钟内就绪，请手动打开 Tailscale.app 后点"刷新状态"。`, 'bad');
+      return;
+    }
+    const st = await refreshAuthState();
+    if (!st) return;
+    const bs = st.tailscale && st.tailscale.backend_state;
+    if (bs === 'Running') {
+      stopAuthPoll();
+      // 客户端起来了，继续走正常登录/进入流程
+      if (st.tailscale.logged_in) {
+        await doLogin({ method: 'current' });
+      } else {
+        showLogin(st);
+      }
+    }
+  }, 2000);
 }
 
 function startAuthPoll() {
@@ -1001,6 +1054,12 @@ async function start() {
   const st = await refreshAuthState();
   if (!st) {
     showLogin(null, { title: '无法连接本机服务', body: '请重启控制台程序。', kind: 'bad' });
+    return;
+  }
+  const bs = st.tailscale && st.tailscale.backend_state;
+  if (bs === 'Stopped') {
+    // 守护进程未运行，无论是否登录都先提示启动客户端
+    showLogin(st);
     return;
   }
   if (st.logged_in) {

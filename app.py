@@ -348,6 +348,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(self.api_auth_login(body))
             elif path == "/api/auth/open":
                 self._json(self.api_auth_open(body))
+            elif path == "/api/start-client":
+                self._json(self.api_start_client(body))
             # --- 需要登录 ---
             elif path == "/api/auth/logout":
                 if self._need_session():
@@ -475,6 +477,32 @@ class Handler(BaseHTTPRequestHandler):
             "cmd": "清除本控制台的登录会话（未触碰 Tailscale）",
             "out": "已注销。设备仍留在 tailnet 中，Tailscale 连接不受影响。",
         }
+
+    def api_start_client(self, body: dict) -> dict:
+        """启动 Tailscale.app 拉起 tailscaled 守护进程。无需登录。
+
+        场景：BackendState=Stopped（守护进程停了）时，前端检测到会显示
+        "启动客户端"按钮，点击调这个接口，用 `open -a` 拉起 Tailscale.app。
+        """
+        app_path = "/Applications/Tailscale.app"
+        if not os.path.exists(app_path):
+            return {
+                "ok": False,
+                "err": "未找到 /Applications/Tailscale.app，请先安装 Tailscale 客户端。",
+            }
+        try:
+            # open -a 是异步的，立即返回；Tailscale.app 会自己拉起 tailscaled
+            subprocess.Popen(
+                ["open", "-a", app_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return {
+                "ok": True,
+                "msg": "已尝试启动 Tailscale 客户端，守护进程正在就绪，请稍候。",
+            }
+        except Exception as e:
+            return {"ok": False, "err": f"启动失败：{e}"}
 
     def api_auth_open(self, body: dict) -> dict:
         """打开 Tailscale 官方页面。只允许 tailscale.com 域名，防止被当成任意跳板。"""

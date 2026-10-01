@@ -211,10 +211,15 @@ def account() -> dict:
         for u in users.values()
     ]
     backend = data.get("BackendState") or "Unknown"
+    # logged_in 判断账号是否登录，而非守护进程是否在跑。
+    # 之前用 `backend == "Running"` 会把 Stopped（守护进程停了但账号还在）
+    # 误判成未登录，导致前端卡在登录页、后端 /api/auth/login 拒绝建会话。
+    # 正确语义：status --json 的 User 字段有数据 = 已登录；
+    # NeedsLogin/未登录时 User 字段为空。
     return {
         "ok": bool(res.get("data")),
         "backend_state": backend,
-        "logged_in": backend == "Running",
+        "logged_in": bool(accounts) and backend != "NeedsLogin",
         "auth_url": data.get("AuthURL") or "",
         "accounts": accounts,
         "hostname": (data.get("Self") or {}).get("HostName", ""),
