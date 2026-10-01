@@ -35,7 +35,7 @@ from urllib.parse import urlparse
 import tailscale_cli as ts
 
 APP_NAME = "Tailscale 控制台"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
@@ -479,28 +479,90 @@ class Handler(BaseHTTPRequestHandler):
         }
 
     def api_start_client(self, body: dict) -> dict:
-        """启动 Tailscale.app 拉起 tailscaled 守护进程。无需登录。
+        """拉起 Tailscale 客户端，让 tailscaled 守护进程恢复运行。无需登录。
 
-        场景：BackendState=Stopped（守护进程停了）时，前端检测到会显示
-        "启动客户端"按钮，点击调这个接口，用 `open -a` 拉起 Tailscale.app。
+        场景：BackendState=Stopped（守护进程停了）时，前端会显示
+        「启动 Tailscale 客户端」按钮，点击调这个接口。
+
+        为什么必须分平台写：这个功能是 mac 侧加的，原实现硬编码了
+        /Applications/Tailscale.app 并调用 macOS 专有的 `open -a`，
+        在 Windows 上必然报"未找到"。三家的启动方式完全不同：
+          macOS   -> open -a /Applications/Tailscale.app
+          Windows -> tailscale-ipn.exe（GUI 托盘程序，会自己拉起 tailscaled）
+          Linux   -> systemctl start tailscaled
         """
-        app_path = "/Applications/Tailscale.app"
-        if not os.path.exists(app_path):
-            return {
-                "ok": False,
-                "err": "未找到 /Applications/Tailscale.app，请先安装 Tailscale 客户端。",
-            }
+        # ---------- macOS ----------
+        if IS_MACOS:
+            app_path = "/Applications/Tailscale.app"
+            if not os.path.exists(app_path):
+                return {
+                    "ok": False,
+                    "err": "未找到 /Applications/Tailscale.app，请先安装 Tailscale 客户端。",
+                }
+            try:
+                # open -a 是异步的，立即返回；Tailscale.app 会自己拉起 tailscaled
+                subprocess.Popen(
+                    ["open", "-a", app_path],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                return {
+                    "ok": True,
+                    "msg": "已尝试启动 Tailscale 客户端，守护进程正在就绪，请稍候。",
+                }
+            except Exception as e:
+                return {"ok": False, "err": f"启动失败：{e}"}
+
+        # ---------- Windows ----------
+        if IS_WINDOWS:
+            # tailscale-ipn.exe 是带托盘图标的 GUI 客户端，启动它会拉起 tailscaled。
+            # 优先从已探测到的 tailscale.exe 同目录推导，这样自定义安装路径也能命中。
+            candidates = []
+            if ts.TS_EXE:
+                candidates.append(Path(ts.TS_EXE).with_name("tailscale-ipn.exe"))
+            candidates += [
+                Path(r"C:\Program Files\Tailscale\tailscale-ipn.exe"),
+                Path(r"C:\Program Files (x86)\Tailscale\tailscale-ipn.exe"),
+            ]
+            seen, target = set(), None
+            for c in candidates:
+                key = str(c).lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                if c.is_file():
+                    target = c
+                    break
+            if not target:
+                return {
+                    "ok": False,
+                    "err": (
+                        "未找到 Tailscale 客户端（tailscale-ipn.exe）。"
+                        "请确认已安装 Tailscale，或手动启动后再点「刷新状态」。"
+                    ),
+                }
+            try:
+                subprocess.Popen(
+                    [str(target)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=ts.CREATE_NO_WINDOW,  # 不弹黑框
+                )
+                return {
+                    "ok": True,
+                    "msg": "已尝试启动 Tailscale 客户端，守护进程正在就绪，请稍候。",
+                }
+            except Exception as e:
+                return {"ok": False, "err": f"启动失败：{e}"}
+
+        # ---------- Linux ----------
         try:
-            # open -a 是异步的，立即返回；Tailscale.app 会自己拉起 tailscaled
             subprocess.Popen(
-                ["open", "-a", app_path],
+                ["systemctl", "start", "tailscaled"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            return {
-                "ok": True,
-                "msg": "已尝试启动 Tailscale 客户端，守护进程正在就绪，请稍候。",
-            }
+            return {"ok": True, "msg": "已尝试启动 tailscaled 服务，请稍候。"}
         except Exception as e:
             return {"ok": False, "err": f"启动失败：{e}"}
 

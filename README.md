@@ -2,11 +2,11 @@
 
 把 `console.tailscale.com/admin/machines` 那套网页后台，换成一个**本机双击就开的窗口程序**。
 
-当前版本：**v1.2.0**　｜　适配 Tailscale 客户端 **1.102.3**　｜　支持 **Windows** 与 **macOS**（Apple Silicon / Intel 均可）
+当前版本：**v1.2.1**　｜　适配 Tailscale 客户端 **1.102.3**　｜　支持 **Windows** 与 **macOS**（Apple Silicon / Intel 均可）
 
 - 仓库：<https://github.com/ershixiongdi-spec/tailscale-console>
 - Windows 免安装版（17 MB，无需 Python）：
-  <https://github.com/ershixiongdi-spec/tailscale-console/releases/download/v1.2.0/TailscaleConsole.exe>
+  <https://github.com/ershixiongdi-spec/tailscale-console/releases/download/v1.2.1/TailscaleConsole.exe>
 - 许可：MIT
 
 ---
@@ -229,7 +229,8 @@ macOS 侧对应要求：Python 3.9+、Tailscale 命令行（`brew install tailsc
 
 | 版本 | 内容 |
 |---|---|
-| **v1.2.0** | 支持 macOS：跨平台找 Tailscale 命令行、浏览器退回路径跨平台、图标产出 `.icns`、新增 `build_mac.sh` 一键构建 `.app`；`_build_exe.py` 统一为跨平台 `_build.py` |
+| **v1.2.1** | 修复 `Stopped` 状态被误判为「未登录」（改为以账号是否存在为准）；新增「启动 Tailscale 客户端」按钮（守护进程停了可一键拉起）；`api_start_client` 改为跨平台实现 |
+| v1.2.0 | 支持 macOS：跨平台找 Tailscale 命令行、浏览器退回路径跨平台、图标产出 `.icns`、新增 `build_mac.sh` 一键构建 `.app`；`_build_exe.py` 统一为跨平台 `_build.py` |
 | v1.1.0 | 新增登录页（对齐官网样式）、账号显示与注销按钮、底部状态栏（版本号 + 下载链接）、软件版本卡片；接口加登录门禁 |
 | v1.0.0 | 首版：设备总览、本机设置、网络诊断、云端管理、运行日志 |
 
